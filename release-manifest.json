@@ -1,0 +1,14 @@
+{
+  "product": "FORMA",
+  "basePath": "/forma-gym-pages",
+  "archives": [
+    {
+      "name": "web-release-1.zip",
+      "sha256": "1be0101eaf1c3c300f25849516601066beb55fd05c29a223eeda6307319eb1d4"
+    },
+    {
+      "name": "web-release-2.zip",
+      "sha256": "b8e57ffffeb4ac9a00b2f7eaf2e7827ae718013ac92bf7031db1aa411adfa79a"
+    }
+  ]
+}
