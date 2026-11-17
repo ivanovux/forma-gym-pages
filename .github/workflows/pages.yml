@@ -1,0 +1,48 @@
+name: Publish verified FORMA web build
+on:
+  push:
+    branches: [main]
+    paths: ['web-release-*.zip', 'release-manifest.json', '.github/workflows/pages.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Verify and expand the ready web build
+        run: |
+          python3 - <<'PY'
+          import pathlib, zipfile, hashlib, json
+          root = pathlib.Path.cwd().resolve()
+          site = root / 'site'
+          site.mkdir()
+          manifest = json.loads((root/'release-manifest.json').read_text())
+          for item in manifest['archives']:
+              archive = root / item['name']
+              assert hashlib.sha256(archive.read_bytes()).hexdigest() == item['sha256'], 'Archive checksum mismatch'
+              with zipfile.ZipFile(archive) as z:
+                  for name in z.namelist():
+                      assert (site/name).resolve().is_relative_to(site)
+                      assert not name.endswith(('.map','.ts','.tsx','.env'))
+                  z.extractall(site)
+          assert (site/'index.html').exists()
+          assert (site/'.nojekyll').exists()
+          assert len(list((site/'assets').rglob('*.jpg'))) >= 466
+          PY
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
