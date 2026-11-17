@@ -1,0 +1,31 @@
+name: Verify every published file
+on:
+  push:
+    paths: ['.github/workflows/verify-live.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Compare public files with the verified release
+        run: |
+          python3 - <<'PY'
+          import pathlib, json, zipfile, hashlib, urllib.request, urllib.parse, concurrent.futures
+          root = pathlib.Path.cwd()
+          site = root/'expected'
+          for item in json.loads((root/'release-manifest.json').read_text())['archives']:
+              archive=root/item['name']
+              assert hashlib.sha256(archive.read_bytes()).hexdigest()==item['sha256']
+              with zipfile.ZipFile(archive) as z: z.extractall(site)
+          files=[p for p in site.rglob('*') if p.is_file() and not p.name.startswith('.')]
+          def verify(p):
+              url='https://ivanovux.github.io/forma-gym-pages/'+urllib.parse.quote(p.relative_to(site).as_posix())
+              with urllib.request.urlopen(url,timeout=30) as r: actual=r.read()
+              assert hashlib.sha256(actual).digest()==hashlib.sha256(p.read_bytes()).digest(), p.relative_to(site)
+          with concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool: list(pool.map(verify,files))
+          print('Verified public files:',len(files))
+          print('All published HTML, JavaScript, photographs, fonts and icons match the tested release.')
+          PY
