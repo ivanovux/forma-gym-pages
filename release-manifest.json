@@ -9,6 +9,10 @@
     {
       "name": "web-release-2.zip",
       "sha256": "b8e57ffffeb4ac9a00b2f7eaf2e7827ae718013ac92bf7031db1aa411adfa79a"
+    },
+    {
+      "name": "web-release-3.zip",
+      "sha256": "6429ce15eb5011e310d2be7303172cd83829fb87027b31998d999c44b9cf7fce"
     }
   ]
 }
