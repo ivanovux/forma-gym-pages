@@ -1,0 +1,92 @@
+name: Publish verified web patch
+on:
+  push:
+    branches: [main]
+    paths: ['web-patch.b64', '.github/workflows/publish-web-patch.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Verify patch and preserve reproducible release archives
+        run: |
+          python3 - <<'PY'
+          import base64, pathlib, hashlib, zipfile, json
+          root = pathlib.Path.cwd()
+          patch = root/'web-patch.b64'
+          if patch.exists():
+              data = base64.b64decode(patch.read_text(), validate=True)
+              expected = '6429ce15eb5011e310d2be7303172cd83829fb87027b31998d999c44b9cf7fce'
+              assert hashlib.sha256(data).hexdigest() == expected
+              archive = root/'web-release-3.zip'
+              archive.write_bytes(data)
+              with zipfile.ZipFile(archive) as z:
+                  assert sorted(z.namelist()) == ['_expo/static/js/web/index-7f5ffc8cb4e3495a5c4630915c442556.js', 'index.html']
+              manifest = json.loads((root/'release-manifest.json').read_text())
+              manifest['archives'] = [a for a in manifest['archives'] if a['name'] != archive.name]
+              manifest['archives'].append({'name': archive.name, 'sha256': expected})
+              (root/'release-manifest.json').write_text(json.dumps(manifest, indent=2)+'\n')
+              patch.unlink()
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add web-release-3.zip release-manifest.json
+          git add -u web-patch.b64
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish verified photo controls web patch"
+            git push
+          fi
+      - name: Verify and expand complete web release
+        run: |
+          python3 - <<'PY'
+          import pathlib, zipfile, hashlib, json
+          root = pathlib.Path.cwd().resolve()
+          site = root/'site'
+          site.mkdir()
+          for item in json.loads((root/'release-manifest.json').read_text())['archives']:
+              archive = root/item['name']
+              assert hashlib.sha256(archive.read_bytes()).hexdigest() == item['sha256']
+              with zipfile.ZipFile(archive) as z:
+                  for name in z.namelist():
+                      assert (site/name).resolve().is_relative_to(site)
+                      assert not name.endswith(('.map','.ts','.tsx','.env'))
+                  z.extractall(site)
+          assert (site/'index.html').exists() and (site/'.nojekyll').exists()
+          assert 'index-7f5ffc8cb4e3495a5c4630915c442556.js' in (site/'index.html').read_text()
+          assert len(list((site/'assets').rglob('*.jpg'))) >= 466
+          PY
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+      - name: Verify published HTML and new bundle
+        run: |
+          python3 - <<'PY'
+          import pathlib, urllib.request, hashlib, time
+          base = 'https://ivanovux.github.io/forma-gym-pages/'
+          for name in ['index.html','_expo/static/js/web/index-7f5ffc8cb4e3495a5c4630915c442556.js']:
+              expected = hashlib.sha256((pathlib.Path('site')/name).read_bytes()).hexdigest()
+              for attempt in range(12):
+                  try:
+                      req = urllib.request.Request(base+name+'?release=photo-controls-20261118', headers={'Cache-Control':'no-cache'})
+                      with urllib.request.urlopen(req,timeout=20) as response: actual = hashlib.sha256(response.read()).hexdigest()
+                      if actual == expected: break
+                  except Exception: pass
+                  time.sleep(5)
+              else: raise AssertionError('Published file differs: '+name)
+              print('Verified:', name)
+          PY
