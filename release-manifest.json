@@ -12,7 +12,9 @@
     },
     {
       "name": "web-release-3.zip",
-      "sha256": "6429ce15eb5011e310d2be7303172cd83829fb87027b31998d999c44b9cf7fce"
+      "sha256": "4fd5b63e8bd13dda6f27e990babbffd8163b18ebdd1ed410702dd2c5ea7f2f36"
     }
-  ]
+  ],
+  "sourceCommit": "f78e5dfd4069001fe9bd3926ea03579eabccc37a",
+  "release": "2026-11-22-theme"
 }
