@@ -13,8 +13,12 @@
     {
       "name": "web-release-3.zip",
       "sha256": "4fd5b63e8bd13dda6f27e990babbffd8163b18ebdd1ed410702dd2c5ea7f2f36"
+    },
+    {
+      "name": "web-release-4.zip",
+      "sha256": "084b7f895da97d8595dd7d657cf70a427bbf3d17fcccaaaace3c34a643c455d4"
     }
   ],
-  "sourceCommit": "f78e5dfd4069001fe9bd3926ea03579eabccc37a",
-  "release": "2026-11-22-theme"
+  "sourceCommit": "d1b7f334439ce43dc5a65a93e49c4377c64f3a8a",
+  "release": "2026-11-23-workout-scope-reveal"
 }
