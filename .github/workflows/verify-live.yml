@@ -1,5 +1,8 @@
 name: Verify every published file
 on:
+  workflow_run:
+    workflows: ['Publish verified FORMA web build']
+    types: [completed]
   push:
     paths: ['.github/workflows/verify-live.yml']
   workflow_dispatch:
@@ -7,6 +10,7 @@ permissions:
   contents: read
 jobs:
   integrity:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
