@@ -17,8 +17,12 @@
     {
       "name": "web-release-4.zip",
       "sha256": "084b7f895da97d8595dd7d657cf70a427bbf3d17fcccaaaace3c34a643c455d4"
+    },
+    {
+      "name": "web-release-5.zip",
+      "sha256": "1aa41def1cefd42e2cacd20f5a4560b1aa856c2a52f4ccff555e470b18559b1d"
     }
   ],
-  "sourceCommit": "d1b7f334439ce43dc5a65a93e49c4377c64f3a8a",
-  "release": "2026-11-23-workout-scope-reveal"
+  "sourceCommit": "93dc4ec4dfce7d7ce46ef856cac6d0b49055cb81",
+  "release": "last-workout-weight-reminder"
 }
